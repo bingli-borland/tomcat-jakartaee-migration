@@ -67,6 +67,10 @@ public class ClassConverter implements Converter, ClassFileTransformer {
         this.profile = profile;
     }
 
+    public EESpecProfile getProfile() {
+        return profile;
+    }
+
     @Override
     public String toString() {
         return ClassConverter.class.getCanonicalName() + '[' + profile.toString() + ']';

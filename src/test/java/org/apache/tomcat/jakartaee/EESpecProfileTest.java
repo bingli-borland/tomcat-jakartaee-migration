@@ -23,6 +23,9 @@ import static org.junit.Assert.*;
 
 public class EESpecProfileTest {
 
+    public static void main(String[] args) {
+        System.out.println(EESpecProfiles.JEE8.convert("META-INF/services/jakarta.servlet.ServletContainerInitializer"));
+    }
     @Test
     public void testProfileTomcat() {
         EESpecProfile profile = EESpecProfiles.TOMCAT;
