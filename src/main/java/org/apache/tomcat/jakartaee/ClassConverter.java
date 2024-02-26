@@ -24,6 +24,8 @@ import java.io.OutputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -116,6 +118,7 @@ public class ClassConverter implements Converter, ClassFileTransformer {
      */
     protected boolean convertInternal(String path, InputStream src, OutputStream dest, EESpecProfile profile, ClassLoader loader)
             throws IOException {
+        Map<String, Boolean> exists = new HashMap<>();
         byte[] classBytes = IOUtils.toByteArray(src);
         ClassParser parser = new ClassParser(new ByteArrayInputStream(classBytes), "unknown");
         JavaClass javaClass = parser.parse();
@@ -124,6 +127,14 @@ public class ClassConverter implements Converter, ClassFileTransformer {
 
         // Loop through constant pool
         Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
+
+        for (int i = 0; i < constantPool.length; i++) {
+            if (constantPool[i] instanceof ConstantUtf8) {
+                ConstantUtf8 c = (ConstantUtf8) constantPool[i];
+                String str = c.getBytes();
+                exists.put(str, true);
+            }
+        }
         // Need an int as the maximum pool size is 2^16
         for (int i = 0; i < constantPool.length; i++) {
             if (constantPool[i] instanceof ConstantUtf8) {
@@ -167,9 +178,11 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                             }
                         }
                     }
-                    c = new ConstantUtf8(newString);
-                    constantPool[i] = c;
-                    converted = true;
+                    if (!exists.containsKey(newString)) {
+                        c = new ConstantUtf8(newString);
+                        constantPool[i] = c;
+                        converted = true;
+                    }
                 }
             }
         }

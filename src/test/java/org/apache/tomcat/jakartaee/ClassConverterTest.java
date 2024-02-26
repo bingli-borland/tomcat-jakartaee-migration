@@ -93,4 +93,45 @@ public class ClassConverterTest {
         assertTrue(strings.contains("jakarta.servlet.CommonGatewayInterface"));
         assertTrue(strings.contains("jakarta/servlet/CommonGatewayInterface"));
     }
+    @Test
+    public void testTransformBoth() throws Exception {
+        byte[] original = null;
+        byte[] transformed;
+
+        // Get the original bytes
+        try (InputStream is = this.getClass().getResourceAsStream("/org/apache/tomcat/jakartaee/TesterBothConstants.class");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = is.read(buf)) > 0) {
+                baos.write(buf, 0, len);
+            }
+            original = baos.toByteArray();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            fail();
+        }
+
+        // Transform
+        ClassConverter convertor = new ClassConverter(EESpecProfiles.TOMCAT);
+        transformed = convertor.transform(this.getClass().getClassLoader(),
+                "org.apache.tomcat.jakartaee.TesterBothConstants", null, null, original);
+
+        // Extract strings
+        Set<String> strings = new HashSet<>();
+        ClassParser parser = new ClassParser(new ByteArrayInputStream(transformed), "unknown");
+        JavaClass javaClass = parser.parse();
+        Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
+        for (int i = 0; i < constantPool.length; i++) {
+            if (constantPool[i] instanceof ConstantUtf8) {
+                ConstantUtf8 c = (ConstantUtf8) constantPool[i];
+                strings.add(c.getBytes());
+            }
+        }
+
+        // Check the results
+        // Should not be converted
+        assertTrue(strings.contains("javax/servlet/CommonGatewayInterface"));
+        assertTrue(strings.contains("jakarta/servlet/CommonGatewayInterface"));
+    }
 }
